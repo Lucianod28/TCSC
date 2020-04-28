@@ -11,13 +11,14 @@ from src.utils.cmd_line import parse_args
 from src.scripts.plotting import plot_rf
 
 
+params = "kern=4_stride=2_rlr=0.001_lr=0.0007_lmda=0.0002"
 # save to tensorboard
-board = SummaryWriter("../../runs/sparse-net")
+board = SummaryWriter("../../runs/sparse-net/" + params)
 arg = parse_args()
 # if use cuda
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # create net
-sparse_net = SparseNet(arg.n_neuron, arg.size, R_lr=arg.r_learning_rate, lmda=arg.reg, device=device)
+sparse_net = SparseNet(arg.n_neuron, arg.size, arg.kernel_size, arg.stride, R_lr=arg.r_learning_rate, lmda=arg.reg, device=device)
 # load data
 dataloader = DataLoader(NatPatchDataset(arg.batch_size, arg.size, arg.size), batch_size=250)
 # train
@@ -27,6 +28,8 @@ for e in range(arg.epoch):
     c = 0
     for img_batch in tqdm(dataloader, desc='training', total=len(dataloader)):
         img_batch = img_batch.reshape(img_batch.shape[0], -1).to(device)
+        #print('img batch shape: ')
+        #print(img_batch.shape)
         # update
         pred = sparse_net(img_batch)
         loss = ((img_batch - pred) ** 2).sum()
@@ -39,12 +42,14 @@ for e in range(arg.epoch):
         # norm
         sparse_net.normalize_weights()
         c += 1
-    board.add_scalar('Loss', running_loss / c, e * len(dataloader) + c)
+    board.add_scalar('General loss', running_loss / c, e * len(dataloader) + c)
+    board.add_scalar('ista loss', sparse_net.get_ista_loss(), e * len(dataloader) + c)
     if e % 5 == 4:
         # plotting
-        fig = plot_rf(sparse_net.U.weight.T.reshape(arg.n_neuron, arg.size, arg.size).cpu().data.numpy(), arg.n_neuron, arg.size)
+        conv_out_width = (arg.size - 1) * arg.stride + (arg.kernel_size-1) + 1
+        fig = plot_rf(sparse_net.U.weight.T.reshape(conv_out_width ** 2, arg.size, arg.size).cpu().data.numpy(), conv_out_width ** 2, arg.size)
         board.add_figure('RF', fig, global_step=e * len(dataloader) + c)
     if e % 10 == 9:
         # save checkpoint
-        torch.save(sparse_net, f"../../trained_models/ckpt-{e+1}.pth")
-torch.save(sparse_net, f"../../trained_models/ckpt-{e+1}.pth")
+        torch.save(sparse_net, f"../../trained_models/{params}/ckpt-{e+1}.pth")
+torch.save(sparse_net, f"../../trained_models/{params}/ckpt-{e+1}.pth")

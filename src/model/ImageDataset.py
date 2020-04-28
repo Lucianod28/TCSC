@@ -29,7 +29,7 @@ class NatPatchDataset(Dataset):
         X = loadmat(self.fpath)
         X = X['IMAGES']
         img_size = X.shape[0]
-        n_img = X.shape[2]
+        n_img = X.shape[2] - 1
         self.images = torch.zeros((self.N * n_img, self.width, self.height))
         # for every image
         counter = 0
