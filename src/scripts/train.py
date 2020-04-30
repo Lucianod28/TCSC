@@ -1,17 +1,25 @@
 import os
+from pathlib import Path
 import sys
 sys.path.insert(0, os.path.abspath('../../.'))
+
 from tqdm import tqdm
 import torch
-from src.model.SparseNet import SparseNet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+
+from src.model.SparseNet import SparseNet
 from src.model.ImageDataset import NatPatchDataset
 from src.utils.cmd_line import parse_args
 from src.scripts.plotting import plot_rf
 
+arg = parse_args()
 
-params = "kern=4_stride=2_rlr=0.001_lr=0.0007_lmda=0.0002"
+params = f"kern={arg.kernel_size}_stride={arg.stride}_rlr={arg.r_learning_rate}_lr={arg.learning_rate}_lmda={arg.reg}"
+checkpoint_path = f'../../trained_models/{params}/'
+# create the checkpoint directory if it doesn't exist
+Path(checkpoint_path).mkdir(exist_ok=True)
+
 # save to tensorboard
 board = SummaryWriter("../../runs/sparse-net/" + params)
 arg = parse_args()
