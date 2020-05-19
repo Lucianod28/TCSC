@@ -1,9 +1,9 @@
-# Topological Convolutional Sparse Coding
+# Topographic Convolutional Sparse Coding
 
 ![](./trained_models/RF.png)
 
-This is an implementationi of a convolutional sparse coding model with an extra linear layer on the
-end, which results in a topological ordering of filters.
+This is an implementation of a convolutional sparse coding model with an extra linear layer on the
+end, which results in a topographic ordering of filters.
 
 ## Run
 To run the program:
