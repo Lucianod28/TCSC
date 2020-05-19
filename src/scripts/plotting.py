@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_rf(rf, out_dim, M):
+def plot_rf(rf, out_dim, M, alphas=None):
     rf = rf.reshape(out_dim, -1)
     # normalize
     rf = rf.T / np.abs(rf).max(axis=1)
@@ -15,6 +15,8 @@ def plot_rf(rf, out_dim, M):
     for i in range(rf.shape[0]):
         ax = axes[i // n][i % n]
         ax.imshow(rf[i], cmap='gray', vmin=-1, vmax=1)
+        if alphas is not None:
+            ax.axvspan(-0.5, rf.shape[1]-0.5, color='red', alpha=alphas[i].item())
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_aspect('equal')

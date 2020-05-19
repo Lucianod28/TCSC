@@ -7,24 +7,45 @@ import numpy as np
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 
+from src.utils.cmd_line import parse_args
 from src.model.ImageDataset import NatPatchDataset
+from src.scripts.plotting import plot_rf
 
-def generate_image(fpath='../../data/IMAGES.mat'):
-    size = 10
+arg = parse_args()
+fpath='../../data/IMAGES.mat'
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataloader = DataLoader(NatPatchDataset(1, size, size), batch_size=1)
-    model = torch.load('../../trained_models/kern=4_stride=2_rlr=0.001_lr=0.0007_lmda=0.0002/ckpt-90.pth', map_location=device)
-    model.eval()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+dataloader = DataLoader(NatPatchDataset(1, arg.size, arg.size), batch_size=1)
+model = torch.load('../../trained_models/kern=3_stride=1_rlr=0.0006_lr=0.0008_lmda=0.0012/ckpt-100.pth', map_location=device)
+model.eval()
 
-    for img_batch in dataloader:
-        img_batch = img_batch.reshape(img_batch.shape[0], -1).to(device)
-        pred = model(img_batch)
-        plt.subplot(1, 2, 1)
-        plt.imshow(img_batch.reshape(10, 10).cpu().numpy())
-        plt.subplot(1, 2, 2)
-        plt.imshow(pred.reshape(10, 10).detach().cpu().numpy())
-        plt.savefig('kern4_stride2.png',  cmap='Greys')
-        return
+conv_out_width = (arg.size - 1) * arg.stride + (arg.kernel_size-1) + 1
 
-generate_image()
+for img_batch in dataloader:
+    # Actual image
+    #img_batch = img_batch.reshape(img_batch.shape[0], -1).to(device)
+
+    # Horizontal line
+    #img_batch = torch.zeros((10, 10))
+    #img_batch[4:6, :] = 1
+    #img_batch = img_batch.reshape(1, 100).to(device)
+
+    # Diagonal image
+    img_batch = torch.ones((10))
+    img_batch = torch.diag(img_batch) + torch.diag(img_batch[1:], -1) + torch.diag(img_batch[1:], 1)
+    img_batch = img_batch.flip(0).reshape(1, 100).to(device)
+    pred = model(img_batch)
+    activations = model.conv_trans(model.R).reshape(img_batch.shape[0], -1).reshape(-1)
+    activations = activations - activations.min()
+    activations = (activations / activations.max()) / 2
+    fig = plot_rf(model.U.weight.T.reshape(conv_out_width ** 2, arg.size, arg.size).cpu().data.numpy(), conv_out_width ** 2, arg.size, alphas=activations)
+    fig.savefig('activation.png')
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(img_batch.reshape(10, 10).cpu().numpy(), cmap='gray')
+    plt.subplot(1, 2, 2)
+    plt.imshow(pred.reshape(10, 10).detach().cpu().numpy(), cmap='gray')
+    plt.savefig('reconstruction.png')
+    break
+
+

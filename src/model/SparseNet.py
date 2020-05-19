@@ -19,12 +19,14 @@ class SparseNet(nn.Module):
         self.R = None
         self.normalize_weights()
         # transpose convolution
-        self.conv_trans = nn.ConvTranspose2d(in_channels=self.K, out_channels=1, kernel_size=F, stride=S).to(self.device)
+        self.conv_trans = nn.ConvTranspose2d(in_channels=self.K, out_channels=1,
+                kernel_size=F, stride=S).to(self.device)
         self.running_ista_loss = 0.
 
     def ista_(self, img_batch):
         # create R
-        self.R = torch.zeros((img_batch.shape[0], self.K, self.M, self.M), requires_grad=True, device=self.device)
+        self.R = torch.zeros((img_batch.shape[0], self.K, self.M, self.M),
+                requires_grad=True, device=self.device)
         converged = False
         # update R
         optim = torch.optim.SGD([{'params': self.R, "lr": self.R_lr}])
@@ -42,7 +44,7 @@ class SparseNet(nn.Module):
             #print(pred.shape)
             # loss
             loss = ((img_batch - pred) ** 2).sum()
-            self.ista_loss += loss
+            self.ista_loss += loss.item()
             self.ista_loss_count += 1
             loss.backward()
             # update R in place
