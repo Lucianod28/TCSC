@@ -30,7 +30,9 @@ sparse_net = SparseNet(arg.n_neuron, arg.size, arg.kernel_size, arg.stride, R_lr
 # load data
 dataloader = DataLoader(NatPatchDataset(arg.batch_size, arg.size, arg.size), batch_size=250)
 # train
-optim = torch.optim.SGD([{'params': [sparse_net.U.weight, sparse_net.conv_trans.weight], "lr": arg.learning_rate}])
+optim = torch.optim.SGD([{'params': [sparse_net.U.weight,
+    #sparse_net.conv_trans.weight
+    ], "lr": arg.learning_rate}])
 for e in range(arg.epoch):
     running_loss = 0
     c = 0

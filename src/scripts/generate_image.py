@@ -16,7 +16,8 @@ fpath='../../data/IMAGES.mat'
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dataloader = DataLoader(NatPatchDataset(1, arg.size, arg.size), batch_size=1)
-model = torch.load('../../trained_models/kern=3_stride=1_rlr=0.0006_lr=0.0008_lmda=0.0012/ckpt-100.pth', map_location=device)
+model = torch.load(f"../../trained_models/kern={arg.kernel_size}_stride={arg.stride}_rlr="
+f"{arg.r_learning_rate}_lr={arg.learning_rate}_lmda={arg.reg}/ckpt-100.pth", map_location=device)
 model.eval()
 
 conv_out_width = (arg.size - 1) * arg.stride + (arg.kernel_size-1) + 1
@@ -35,10 +36,12 @@ for img_batch in dataloader:
     img_batch = torch.diag(img_batch) + torch.diag(img_batch[1:], -1) + torch.diag(img_batch[1:], 1)
     img_batch = img_batch.flip(0).reshape(1, 100).to(device)
     pred = model(img_batch)
-    activations = model.conv_trans(model.R).reshape(img_batch.shape[0], -1).reshape(-1)
-    activations = activations - activations.min()
-    activations = (activations / activations.max()) / 2
-    fig = plot_rf(model.U.weight.T.reshape(conv_out_width ** 2, arg.size, arg.size).cpu().data.numpy(), conv_out_width ** 2, arg.size, alphas=activations)
+    #activations = model.conv_trans(model.R).reshape(img_batch.shape[0], -1).reshape(-1)
+    activations = model.R.reshape(400, 100)
+    activations = None
+    #activations = activations - activations.min()
+    #activations = (activations / activations.max()) / 2
+    fig = plot_rf(model.conv_trans.weight.T.reshape(-1, arg.kernel_size, arg.kernel_size).cpu().data.numpy(), arg.n_neuron, arg.kernel_size, alphas=activations)
     fig.savefig('activation.png')
 
     plt.subplot(1, 2, 1)

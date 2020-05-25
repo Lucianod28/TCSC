@@ -15,7 +15,7 @@ def plot_rf(rf, out_dim, M, alphas=None):
     for i in range(rf.shape[0]):
         ax = axes[i // n][i % n]
         ax.imshow(rf[i], cmap='gray', vmin=-1, vmax=1)
-        if alphas is not None:
+        if alphas is not None and False:
             ax.axvspan(-0.5, rf.shape[1]-0.5, color='red', alpha=alphas[i].item())
         ax.set_xticks([])
         ax.set_yticks([])
