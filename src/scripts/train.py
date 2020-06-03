@@ -15,7 +15,7 @@ from src.scripts.plotting import plot_rf
 
 arg = parse_args()
 
-params = f"kern={arg.kernel_size}_stride={arg.stride}_rlr={arg.r_learning_rate}_lr={arg.learning_rate}_lmda={arg.reg}"
+params = f"normal_kern={arg.kernel_size}_stride={arg.stride}"
 checkpoint_path = f'../../trained_models/{params}/'
 # create the checkpoint directory if it doesn't exist
 Path(checkpoint_path).mkdir(exist_ok=True)

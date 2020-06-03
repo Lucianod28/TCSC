@@ -32,7 +32,6 @@ class SparseNet(nn.Module):
         optim = torch.optim.SGD([{'params': self.R, "lr": self.R_lr}])
         # train
         self.ista_loss = 0.
-        self.ista_loss_count = 0.
         while not converged:
             old_R = self.R.clone().detach()
             # pred
@@ -40,7 +39,6 @@ class SparseNet(nn.Module):
             # loss
             loss = ((img_batch - pred) ** 2).sum()
             self.ista_loss += loss.item()
-            self.ista_loss_count += 1
             loss.backward()
             # update R in place
             optim.step()
@@ -78,4 +76,4 @@ class SparseNet(nn.Module):
         return pred
 
     def get_ista_loss(self):
-        return self.ista_loss / self.ista_loss_count
+        return self.ista_loss
