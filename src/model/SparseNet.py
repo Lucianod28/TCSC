@@ -21,6 +21,9 @@ class SparseNet(nn.Module):
         # transpose convolution
         self.conv_trans = nn.ConvTranspose2d(in_channels=self.N, out_channels=1,
                 kernel_size=K, stride=S).to(self.device)
+
+        # initialize weights to 0 (won't converge)
+        #nn.init.constant_(self.conv_trans.weight.data,0)
         self.normalize_weights()
 
     def ista_(self, img_batch):
@@ -47,7 +50,7 @@ class SparseNet(nn.Module):
             # prox
             self.R.data = SparseNet.soft_thresholding_(self.R, self.lmda)
             # convergence
-            #print(torch.norm(self.R - old_R) / torch.norm(old_R))
+            print(torch.norm(self.R - old_R) / torch.norm(old_R))
             #print(torch.norm(old_R))
             converged = torch.norm(self.R - old_R) / torch.norm(old_R) < 0.01
 
@@ -64,8 +67,8 @@ class SparseNet(nn.Module):
     def normalize_weights(self):
         with torch.no_grad():
             self.U.weight.data = F.normalize(self.U.weight.data, dim=0)
-            self.conv_trans.weight.data = F.normalize(
-                    self.conv_trans.weight.data.reshape(-1, 1, self.K**2), dim=2).reshape(-1, 1, self.K, self.K)
+            #self.conv_trans.weight.data = F.normalize(
+            #        self.conv_trans.weight.data.reshape(-1, 1, self.K**2), dim=2).reshape(-1, 1, self.K, self.K)
 
     def forward(self, img_batch):
         # first fit
