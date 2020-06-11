@@ -5,11 +5,12 @@ import torch.nn.functional as F
 
 class SparseNet(nn.Module):
 
-    def __init__(self, N:int, M:int, K:int, S:int, R_lr:float=0.1, lmda:float=5e-3, device=None):
+    def __init__(self, N:int, M:int, K:int, S:int, T:bool, R_lr:float, lmda:float=5e-3, device=None):
         super(SparseNet, self).__init__()
         self.N = N
         self.M = M
         self.K = K
+        self.T = T
         self.R_lr = R_lr
         self.lmda = lmda
         # synaptic weights
@@ -22,8 +23,8 @@ class SparseNet(nn.Module):
         self.conv_trans = nn.ConvTranspose2d(in_channels=self.N, out_channels=1,
                 kernel_size=K, stride=S).to(self.device)
 
-        # initialize weights to 0 (won't converge)
-        #nn.init.constant_(self.conv_trans.weight.data,0)
+        # initialize weights with a constant
+        #nn.init.constant_(self.conv_trans.weight.data,.2)
         self.normalize_weights()
 
     def ista_(self, img_batch):
@@ -50,9 +51,9 @@ class SparseNet(nn.Module):
             # prox
             self.R.data = SparseNet.soft_thresholding_(self.R, self.lmda)
             # convergence
-            print(torch.norm(self.R - old_R) / torch.norm(old_R))
-            #print(torch.norm(old_R))
-            converged = torch.norm(self.R - old_R) / torch.norm(old_R) < 0.01
+            change = torch.norm(self.R - old_R) / torch.norm(old_R)
+            #print(change.item())
+            converged = change < 0.01
 
     @staticmethod
     def soft_thresholding_(x, alpha):
@@ -63,12 +64,14 @@ class SparseNet(nn.Module):
     def zero_grad(self):
         self.R.grad.zero_()
         self.U.zero_grad()
+        self.conv_trans.zero_grad()
 
     def normalize_weights(self):
         with torch.no_grad():
             self.U.weight.data = F.normalize(self.U.weight.data, dim=0)
-            #self.conv_trans.weight.data = F.normalize(
-            #        self.conv_trans.weight.data.reshape(-1, 1, self.K**2), dim=2).reshape(-1, 1, self.K, self.K)
+            if self.T:  # if we're training conv_trans, normalize it
+                self.conv_trans.weight.data = F.normalize(
+                        self.conv_trans.weight.data.reshape(-1, 1, self.K**2), dim=2).reshape(-1, 1, self.K, self.K)
 
     def forward(self, img_batch):
         # first fit

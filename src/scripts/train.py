@@ -15,24 +15,31 @@ from src.scripts.plotting import plot_rf
 
 arg = parse_args()
 
-params = f"const_init_kern={arg.kernel_size}_stride={arg.stride}"
-checkpoint_path = f'../../trained_models/{params}/'
+# put model params in the filename
+filename = f"uniform_init_kern={arg.kernel_size}_stride={arg.stride}_lmda={arg.reg}"
+if arg.train_conv:
+    filename = "train_" + filename
+checkpoint_path = f'../../trained_models/{filename}/'
 # create the checkpoint directory if it doesn't exist
 Path(checkpoint_path).mkdir(exist_ok=True)
 
 # save to tensorboard
-board = SummaryWriter("../../runs/sparse-net/" + params)
-arg = parse_args()
+board = SummaryWriter("../../runs/sparse-net/" + filename)
 # if use cuda
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # create net
-sparse_net = SparseNet(arg.n_neuron, arg.size, arg.kernel_size, arg.stride, R_lr=arg.r_learning_rate, lmda=arg.reg, device=device)
+sparse_net = SparseNet(arg.n_neuron, arg.size, arg.kernel_size, arg.stride, arg.train_conv,
+        R_lr=arg.r_learning_rate, lmda=arg.reg, device=device)
 # load data
 dataloader = DataLoader(NatPatchDataset(arg.batch_size, arg.size, arg.size), batch_size=250)
 # train
-optim = torch.optim.SGD([{'params': [sparse_net.U.weight,
-    #sparse_net.conv_trans.weight
-    ], "lr": arg.learning_rate}])
+
+if arg.train_conv:
+    optim = torch.optim.SGD([{'params': [sparse_net.U.weight, sparse_net.conv_trans.weight],
+        "lr": arg.learning_rate}])
+else:
+    optim = torch.optim.SGD([{'params': [sparse_net.U.weight], "lr": arg.learning_rate}])
+
 for e in range(arg.epoch):
     running_loss = 0
     c = 0
@@ -61,5 +68,5 @@ for e in range(arg.epoch):
         board.add_figure('RF', fig, global_step=e * len(dataloader) + c)
     if e % 10 == 9:
         # save checkpoint
-        torch.save(sparse_net, f"../../trained_models/{params}/ckpt-{e+1}.pth")
-torch.save(sparse_net, f"../../trained_models/{params}/ckpt-{e+1}.pth")
+        torch.save(sparse_net, f"../../trained_models/{filename}/ckpt-{e+1}.pth")
+torch.save(sparse_net, f"../../trained_models/{filename}/ckpt-{e+1}.pth")
