@@ -36,6 +36,7 @@ class SparseNet(nn.Module):
         optim = torch.optim.SGD([{'params': self.R, "lr": self.R_lr}])
         # train
         self.ista_loss = 0.
+        last_change = None
         while not converged:
             old_R = self.R.clone().detach()
             # pred
@@ -52,7 +53,13 @@ class SparseNet(nn.Module):
             self.R.data = SparseNet.soft_thresholding_(self.R, self.lmda)
             # convergence
             change = torch.norm(self.R - old_R) / torch.norm(old_R)
-            #print(change.item())
+            if torch.isnan(change):  # convergence debugging
+                if (last_change is None):
+                    print(change.item())
+                else:
+                    print(last_change.item(), change.item())
+                exit(1)
+            last_change = change
             converged = change < 0.01
 
     @staticmethod

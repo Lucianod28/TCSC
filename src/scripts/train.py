@@ -18,7 +18,7 @@ arg = parse_args()
 # put model params in the filename
 filename = f"uniform_init_kern={arg.kernel_size}_stride={arg.stride}_lmda={arg.reg}"
 if arg.train_conv:
-    filename = "train_" + filename
+    filename = "new_train_" + filename
 checkpoint_path = f'../../trained_models/{filename}/'
 # create the checkpoint directory if it doesn't exist
 Path(checkpoint_path).mkdir(exist_ok=True)
@@ -45,8 +45,6 @@ for e in range(arg.epoch):
     c = 0
     for img_batch in tqdm(dataloader, desc='training', total=len(dataloader)):
         img_batch = img_batch.reshape(img_batch.shape[0], -1).to(device)
-        #print('img batch shape: ')
-        #print(img_batch.shape)
         # update
         pred = sparse_net(img_batch)
         loss = ((img_batch - pred) ** 2).sum()

@@ -17,7 +17,7 @@ fpath='../../data/IMAGES.mat'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dataloader = DataLoader(NatPatchDataset(1, arg.size, arg.size), batch_size=1)
 model = torch.load(
-        f"../../trained_models/uniform_init_kern={arg.kernel_size}_stride={arg.stride}_lmda={arg.reg}/ckpt-100.pth",
+        f"../../trained_models/const_init_kern={arg.kernel_size}_stride={arg.stride}/ckpt-100.pth",
         map_location=device)
 model.eval()
 
@@ -41,7 +41,6 @@ for img_batch in dataloader:
     #activations = model.R.reshape(400, 100)
     activations = activations - activations.min()
     activations = (activations / activations.max()) / 2
-    activations = None
     fig = plot_rf(model.U.weight.T.reshape(conv_out_width ** 2, arg.size,
         arg.size).cpu().data.numpy(), conv_out_width ** 2, arg.size, alphas=activations)
     fig.savefig('activation.png')
